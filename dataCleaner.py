@@ -1,8 +1,14 @@
 import pandas as pd
+import numpy as np
 import os
 
 def crossAvg(df):
+    log_hl = np.log(df["High"] / df["Low"]) ** 2
+    log_co = np.log(df["Close"] / df["Open"]) ** 2
+    gk_var = (0.5 * log_hl - (2 * np.log(2) - 1) * log_co).rolling(window=20).mean()
+
     df["daily-volume"] = (df["Volume"] * df["Close"]).rolling(window=20, min_periods=20).mean()
+    df["garman-klass"] = np.sqrt(gk_var.clip(lower=0))
     df["short-term-ma"] = df["Close"].rolling(window=50, min_periods=50).mean()
     df["long-term-ma"] = df["Close"].rolling(window=200, min_periods=200).mean()
 
@@ -14,7 +20,7 @@ with os.scandir(directory) as entries:
     for entry in entries:
         stockDf = pd.read_parquet(f"{directory}/{entry.name}")
 
-        stockDf = stockDf[["Date", "Open", "Close", "Volume"]]
+        stockDf = stockDf[["Date", "Open", "High", "Low", "Close", "Volume"]]
 
         stockDf = crossAvg(stockDf)
         stockDf = stockDf[stockDf["Date"] > 20119999].reset_index(drop=True)

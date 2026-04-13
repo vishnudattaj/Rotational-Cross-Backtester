@@ -16,7 +16,8 @@ with os.scandir(directory) as entries:
             stats_list.append(firstDay)
 
 baseline_stats = pd.DataFrame(stats_list)
-baseline_stats.sort_values("signal-strength", inplace=True, ascending=False)
+baseline_stats["risk-adj-signal"] = baseline_stats["signal-strength"] / baseline_stats["garman-klass"]
+baseline_stats.sort_values("risk-adj-signal", inplace=True, ascending=False)
 baseline_stats.reset_index(drop=True, inplace=True)
 baseline_stats.drop(columns=["Date"], inplace=True)
 baseline_stats.to_parquet("baseline_stats.parquet")

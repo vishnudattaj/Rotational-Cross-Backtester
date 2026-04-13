@@ -55,7 +55,7 @@ def sellSignals(investments, master, date):
 
 
 master_df = pd.read_parquet("masterData.parquet")
-topStocks = pd.read_parquet("baseline_stats.parquet").head(50)
+topStocks = pd.read_parquet("baseline_stats.parquet").head(70)
 
 current_cash = len(topStocks["Ticker"].tolist()) * 1000
 tickers = master_df.columns.get_level_values(1).unique().tolist()
@@ -67,7 +67,7 @@ networth = []
 
 open_prices = master_df['Open'].ffill()
 close_prices = master_df['Close'].ffill()
-signals = master_df['signal-strength'].fillna(0)
+signals = master_df['risk-adj-signal'].fillna(0)
 volume = master_df['daily-volume'].ffill()
 
 for i in tqdm(range(len(dates)), desc="Backtesting Strategy"):
@@ -81,7 +81,7 @@ for i in tqdm(range(len(dates)), desc="Backtesting Strategy"):
 
         day_p_start = open_prices.loc[index]
         day_volume_start = volume.loc[index]
-        validTickers = day_p_start[(day_p_start > 5) & (day_volume_start > 1000000)].index.tolist()
+        validTickers = day_p_start[(day_p_start > 5) & (day_volume_start > 2000000)].index.tolist()
         updateSignals = signals.loc[index, validTickers]
 
         while current_cash >= 1000:
@@ -115,7 +115,7 @@ for i in tqdm(range(len(dates)), desc="Backtesting Strategy"):
                 day_s = signals.loc[index]
                 day_volume = volume.loc[index]
 
-                potential = day_s[(day_p > 5) & (day_s > 0) & (day_volume > 1000000)].drop(labels=holdings.keys(), errors='ignore')
+                potential = day_s[(day_p > 5) & (day_s > 0) & (day_volume > 2000000)].drop(labels=holdings.keys(), errors='ignore')
                 num_to_pick = min(possibleBuys, slots_available)
                 top_picks = potential.sort_values(ascending=False).head(num_to_pick)
 
