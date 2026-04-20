@@ -7,7 +7,7 @@ stats_list = []
 
 with os.scandir(directory) as entries:
     for entry in entries:
-        parquet = pd.read_parquet(f"updatedStocks/{entry.name}")
+        parquet = pd.read_parquet(f"{directory}/{entry.name}")
 
         firstDay = parquet.iloc[0]
         firstDay["Ticker"] = entry.name.replace(".parquet", "")

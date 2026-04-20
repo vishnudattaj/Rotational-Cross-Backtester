@@ -1,31 +1,16 @@
 import pandas as pd
 from tqdm import tqdm
 
-def stockChooser(date, investments, master_df, index=0):
-    if date not in master_df.index:
-        return None
-
-    day_signals = master_df.loc[date]
-    available_signals = day_signals.drop(labels=investments, errors='ignore').dropna()
-    try:
-        top_ticker = available_signals[available_signals].sort_values(ascending=False).index[index]
-    except IndexError:
-        top_ticker = None
-
-    return top_ticker
-
-def buyStocks(investments, master, holdings, date, amount):
+def buyStocks(investments, master, holdings, date, stock_price, yesterday=None):
     prices = master.loc[date, investments]
+    if yesterday is not None:
+        amount = stock_price.loc[yesterday, investments]
+    else:
+        amount = stock_price.loc[date, investments]
     share_counts = amount // prices
     holdings.update(share_counts.to_dict())
 
-    if isinstance(share_counts, pd.Series):
-        zero_share_list = share_counts[share_counts == 0].index.tolist()
-    else:
-        zero_share_list = [investments] if share_counts == 0 else []
-
-    return (amount % prices).sum(), zero_share_list
-
+    return (amount % prices).sum(), amount.sum()
 
 def sellStocks(investments, open_prices, holdings, date):
     if not investments:
@@ -53,12 +38,12 @@ def sellSignals(investments, master, date):
 
     return negative_signals.index.tolist()
 
-
+current_cash = 70000
 master_df = pd.read_parquet("masterData.parquet")
-topStocks = pd.read_parquet("baseline_stats.parquet").head(70)
+topStocks = pd.read_parquet("baseline_stats.parquet")
+topStocks['price-sum'] = topStocks['stock-price'].cumsum()
+baseline_top = topStocks[topStocks['price-sum'] <= current_cash]
 
-current_cash = len(topStocks["Ticker"].tolist()) * 1000
-tickers = master_df.columns.get_level_values(1).unique().tolist()
 dates = master_df.index
 holdings = {}
 setBuy = False
@@ -69,37 +54,23 @@ open_prices = master_df['Open'].ffill()
 close_prices = master_df['Close'].ffill()
 signals = master_df['risk-adj-signal'].fillna(0)
 volume = master_df['daily-volume'].ffill()
+stock_price = master_df['stock-price'].ffill()
+combined = pd.concat([signals, stock_price], axis=1, keys=['Signal', 'Price'])
 
 for i in tqdm(range(len(dates)), desc="Backtesting Strategy"):
     index = dates[i]
+    yesterday = dates[i-1]
 
-    if not list(holdings.keys()):
-        investments = topStocks["Ticker"].tolist()
-        leftover_change, zeroStock = buyStocks(investments, open_prices, holdings, index, 1000)
-        current_cash = current_cash - (len(investments) * 1000) + leftover_change
-        networth.append(len(investments) * 1000)
+    if i == 0:
+        investments = baseline_top["Ticker"].tolist()
+        leftover_change, totalAmount = buyStocks(investments, open_prices, holdings, index, stock_price)
+        current_cash = current_cash - totalAmount + leftover_change
+        networth.append(totalAmount)
 
-        day_p_start = open_prices.loc[index]
-        day_volume_start = volume.loc[index]
-        validTickers = day_p_start[(day_p_start > 5) & (day_volume_start > 2000000)].index.tolist()
-        updateSignals = signals.loc[index, validTickers]
-
-        while current_cash >= 1000:
-            investment = stockChooser(index, list(holdings.keys()), updateSignals)
-
-            if investment:
-                leftover_change, zeroStock = buyStocks([investment], open_prices, holdings, index, 1000)
-                current_cash = current_cash + leftover_change - 1000
-            else:
-                break
-
-            if zeroStock:
-                break
-
-    if i > 0:
+    else:
         if setBuy:
-            leftover_change, zeroStock = buyStocks(investmentList, open_prices, holdings, index, 1000)
-            current_cash = current_cash + leftover_change - (1000 * len(investmentList))
+            leftover_change, totalAmount = buyStocks(investmentList, open_prices, holdings, index, stock_price, yesterday)
+            current_cash = current_cash + leftover_change - totalAmount
 
             setBuy = False
 
@@ -107,21 +78,32 @@ for i in tqdm(range(len(dates)), desc="Backtesting Strategy"):
             max_portfolio_size = 100
             current_count = len(holdings)
             slots_available = max_portfolio_size - current_count
+
             current_cash += sellStocks(sellList, open_prices, holdings, index)
 
-            possibleBuys = int(current_cash // 1000)
-            if possibleBuys > 0:
-                day_p = close_prices.loc[index]
-                day_s = signals.loc[index]
-                day_volume = volume.loc[index]
+            day_data = combined.loc[index].unstack(level=0)
 
-                potential = day_s[(day_p > 5) & (day_s > 0) & (day_volume > 2000000)].drop(labels=holdings.keys(), errors='ignore')
-                num_to_pick = min(possibleBuys, slots_available)
-                top_picks = potential.sort_values(ascending=False).head(num_to_pick)
+            day_data['Volume'] = volume.loc[index]
+            day_data['Price_Actual'] = close_prices.loc[index]
 
-                if not top_picks.empty:
-                    investmentList = top_picks.index.tolist()
-                    setBuy = True
+            filtered_candidates = day_data[
+                (day_data['Price_Actual'] > 5) &
+                (day_data['Signal'] > 0) &
+                (day_data['Volume'] > 2000000)
+                ].copy()
+
+            filtered_candidates = filtered_candidates.drop(labels=holdings.keys(), errors='ignore')
+
+            filtered_candidates = filtered_candidates.sort_values(by='Signal', ascending=False)
+            filtered_candidates['price-sum'] = filtered_candidates['Price'].cumsum()
+
+            stocks_we_can_afford = filtered_candidates[filtered_candidates['price-sum'] < current_cash]
+
+            num_to_pick = min(len(stocks_we_can_afford), slots_available)
+            if num_to_pick > 0:
+                top_picks = stocks_we_can_afford.head(num_to_pick)
+                investmentList = top_picks.index.tolist()
+                setBuy = True
 
             setSell = False
 
@@ -144,10 +126,3 @@ results_df = pd.DataFrame({
 })
 
 results_df.to_csv("backtest_history.csv", index=False)
-
-if holdings:
-    holdings_df = pd.DataFrame.from_dict(holdings, orient='index', columns=['Shares'])
-    holdings_df.index.name = 'Ticker'
-    holdings_df.to_csv("final_holdings_inspect.csv")
-else:
-    print("No holdings to save.")

@@ -15,13 +15,13 @@ for filename in tqdm(all_files, desc="Processing Data"):
 
     if not valid_data.empty:
         valid_data["risk-adj-signal"] = valid_data["signal-strength"] / valid_data["garman-klass"]
-        valid_data = valid_data[['Date', 'Open', 'Close', 'risk-adj-signal', 'daily-volume']]
+        valid_data = valid_data[['Date', 'Open', 'Close', 'risk-adj-signal', 'daily-volume', "stock-price", "garman-klass"]]
         valid_data['Ticker'] = ticker
         data_frames.append(valid_data)
 
 totalDf = pd.concat(data_frames)
 totalDf = totalDf.drop_duplicates(subset=['Date', 'Ticker'], keep='first')
 
-reshaped = totalDf.pivot(index='Date', columns='Ticker', values=['Open', 'Close', 'risk-adj-signal', 'daily-volume'])
+reshaped = totalDf.pivot(index='Date', columns='Ticker', values=['Open', 'Close', 'risk-adj-signal', 'daily-volume', "stock-price", "garman-klass"])
 
 reshaped.to_parquet("masterData.parquet")
