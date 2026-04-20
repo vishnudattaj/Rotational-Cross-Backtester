@@ -1,6 +1,6 @@
 # Rotational Cross Backtester
 
-A quantitative framework for evaluating risk-adjusted momentum strategies. This project implements a dual-filter approach: identifying price breakouts via moving average spreads and normalizing those signals using Garman-Klass volatility estimators to prioritize stable upward trends.
+A quantitative framework for evaluating risk-adjusted momentum strategies with dynamic position sizing. This project implements a dual-filter approach: identifying price breakouts via moving average spreads and normalizing those signals using Garman-Klass volatility estimators to prioritize stable upward trends. In additoin, this project implements a volatility-based rotation logic, where capital allocation is inversely proportional to an asset's Garman-Klass volatility, ensuring a balanced risk contribution across the portfolio.
 
 ---
 
@@ -27,7 +27,7 @@ The project is composed of six main scripts:
 
 ### `backTest.py`  
 - **Execution Engine:** Simulates a daily rebalanced portfolio with a 100-slot maximum capacity.
-- **Dynamic Rebalancing:** Automatically sells positions when the risk-adjusted signal turns negative and reinvests capital ($1,000 per block) into the highest-ranked available candidates.
+- **Dynamic Rebalancing:** Automatically sells positions when the risk-adjusted signal turns negative and reinvests capital into the highest-ranked available candidates.
 - **Cash Management:** Tracks transaction leftovers and maintains a running log of total account equity.
 
 ### `graph.py`  
@@ -63,3 +63,4 @@ The project is composed of six main scripts:
 - **MA Spread Tracking:** Uses the distance between the 50/200 MAs to quantify momentum velocity.
 - **Liquidity Guardrails:** Built-in volume and price filters to prevent "penny stock" bias.
 - **Point-in-Time Simulation:** Designed to prevent look-ahead bias by using pivoted daily data.
+- **Inverse Volatility Weighting:** Positions are sized based on risk, not just stock price.
