@@ -11,7 +11,7 @@ def crossAvg(df):
     df["garman-klass"] = np.sqrt(gk_var.clip(lower=0))
     df["short-term-ma"] = df["Close"].rolling(window=50, min_periods=50).mean()
     df["long-term-ma"] = df["Close"].rolling(window=200, min_periods=200).mean()
-    df["stock-price"] = 12 / df["garman-klass"].clip(lower=0.005, upper=0.2)
+    df["stock-price"] = 14.45 / df["garman-klass"].clip(lower=0.005, upper=0.2)
 
     return df
 
