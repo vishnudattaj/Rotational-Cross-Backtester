@@ -23,6 +23,4 @@ plt.grid(True, which='both', linestyle='--', alpha=0.3)
 plt.legend()
 plt.tight_layout()
 
-plt.savefig("og_curve.png", dpi=300)
-print("Plot saved as og_curve.png")
-plt.show()
+plt.savefig("networth_curve.png", dpi=300)
