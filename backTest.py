@@ -1,6 +1,7 @@
 import pandas as pd
 from tqdm import tqdm
 
+
 def buyStocks(investments, master, holdings, date, stock_price, yesterday=None):
     prices = master.loc[date, investments]
     if yesterday is not None:
