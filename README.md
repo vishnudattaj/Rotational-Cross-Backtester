@@ -1,4 +1,4 @@
-# Rotational Cross Backtester
+# Volatility-Adjusted Momentum Engine
 
 A quantitative framework for evaluating risk-adjusted momentum strategies with dynamic position sizing. This project implements a dual-filter approach: identifying price breakouts via moving average spreads and normalizing those signals using Garman-Klass volatility estimators to prioritize stable upward trends. In additoin, this project implements a volatility-based rotation logic, where capital allocation is inversely proportional to an asset's Garman-Klass volatility, ensuring a balanced risk contribution across the portfolio.
 
