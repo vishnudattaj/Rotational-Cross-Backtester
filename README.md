@@ -1,6 +1,6 @@
 # Volatility-Adjusted Momentum Engine
 
-A quantitative framework for evaluating risk-adjusted momentum strategies with dynamic position sizing. This project implements a dual-filter approach: identifying price breakouts via moving average spreads and normalizing those signals using Garman-Klass volatility estimators to prioritize stable upward trends. In addition, this project implements a volatility-based rotation logic, where capital allocation is inversely proportional to an asset's Garman-Klass volatility, ensuring a balanced risk contribution across the portfolio. Furthermore, it utilizes macro-momentum regime filters to isolate structural secular winners and dynamically scales equity allocations to eliminate cash drag as the portfolio compounds.
+A quantitative framework for evaluating risk-adjusted momentum strategies with dynamic position sizing, this project implements a dual-filter approach: identifying price breakouts via moving average spreads and normalizing those signals using Garman-Klass volatility estimators to prioritize stable upward trends. In addition, this project implements a volatility-based rotation logic, where capital allocation is inversely proportional to an asset's Garman-Klass volatility, ensuring a balanced risk contribution across the portfolio. Furthermore, it utilizes macro-momentum regime filters to isolate structural secular winners and dynamically scales equity allocations to eliminate cash drag as the portfolio compounds.
 
 ---
 
